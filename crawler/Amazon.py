@@ -1,49 +1,87 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
-import jaydebeapi
+import pymysql
 from dotenv import load_dotenv
 import os
 
 # .env 파일 로드
 load_dotenv()
 
-# PostgreSQL 연결 설정
+# MySQL 연결 설정
 def connect_to_db():
-    db_name = os.getenv("DB_NAME")
-    jdbc_url = f"jdbc:h2:~/{db_name};AUTO_SERVER=TRUE"
-    driver = "org.h2.Driver"
+    hostname = os.getenv("DB_HOST")
+    username = os.getenv("DB_USER")
+    password = os.getenv("DB_PASSWORD")
+    dbname = os.getenv("DB_NAME")
 
-     # H2 JDBC 드라이버의 경로를 지정해야 합니다.
-    h2_jar_path = "~/Desktop/project/h2/bin/h2-2.1.214.jar"  # H2 JDBC 드라이버 JAR 파일의 경로
-
-    # JayDeBeApi를 사용하여 H2 데이터베이스 연결
-    connection = jaydebeapi.connect(
-        driver, 
-        jdbc_url, 
-        [os.getenv("DB_USER"), os.getenv("DB_PASSWORD")],
-        h2_jar_path
+    connection = pymysql.connect(
+        host = hostname,
+        user = username,
+        password = password,
+        db = dbname,
+        charset = 'utf8'
     )
+
+    return connection
 
 # 제품 데이터 수집 함수
 def get_product_data(driver):
-    products = driver.find_elements(By.XPATH, "//div[@class='s-product-container']")
+    products = driver.find_elements(By.XPATH, "//*[@id='ProductGrid-C9vh1r9haz']/div/div/div/div/ul/li")
     product_data = []
+    hrefs = []
 
     for product in products:
         try:
-            name = product.find_element(By.XPATH, ".//h2").text
-            price = product.find_element(By.XPATH, ".//span[contains(@class,'a-price')]").text
-            rating = product.find_element(By.XPATH, ".//span[@class='a-icon-alt']").text
-            reviews = product.find_element(By.XPATH, ".//span[@class='a-size-base']").text
+            name = product.find_element(By.XPATH, "./div[2]/div[4]/div[1]/div[1]/a").text
+            image_url = product.find_element(By.XPATH, ".//./div[2]/div[3]/div[1]/div[2]/img").get_attribute("src")
+            href = product.find_element(By.XPATH, "./div[1]/a").get_attribute("href")
             
+            hrefs.append(href)
+            
+            print("product name:", name)
+            print("href:", href)
+            break
+        except Exception as e:
+            print(f"Error retrieving product data: {e}")
+
+    for href in hrefs:
+        try:
+            # 상세 페이지에서 얻는 detail
+            driver.get(href)
+            # 페이지 로딩 대기
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "detailBulletsWrapper_feature_div"))
+            )
+            category = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span").text
+            subcategory = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span/ul/li/span").text
+            print("category:", category)
+            print("subcategory:", subcategory)
+            # # TODO: category rank parsing
+            rank = category
+            # # TODO: subcategory rank parsing
+            category_rank = subcategory
+
+            price = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span/span").get_attribute('data-testid')
+            review_cnt = driver.find_element(By.XPATH, "//*[@id='acrCustomerReviewText']").text
+            rating = driver.find_element(By.XPATH, "//*[@id='acrPopover']/span[1]/a/span").text
+            # # TODO: get to know is_soldout
+            store = "Amazon"
+            # # TODO: get keyword from reviews
+
             product_data.append({
                 'name': name,
+                'category': category,
+                'subcategory': subcategory,
                 'price': price,
+                'review_cnt': review_cnt,
+                'image_url': image_url,
                 'rating': rating,
-                'reviews': reviews
+                'store': store
             })
         except Exception as e:
             print(f"Error retrieving product data: {e}")
@@ -57,13 +95,25 @@ def store_data(data):
 
     for item in data:
         try:
+            # 'name': name,
+            #     'category': category,
+            #     'subcategory': subcategory,
+            #     'price': price,
+            #     'review_cnt': review_cnt,
+            #     'image_url': image_url,
+            #     'rating': rating,
+            #     'store': store
             cursor.execute("""
-                INSERT INTO products (name, price, rating, reviews)
-                VALUES (%s, %s, %s, %s)
-            """, (item['name'], item['price'], item['rating'], item['reviews']))
+                INSERT INTO product (name, category, subcategory,
+                    price, review_cnt, image_url, rating, store)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (item['name'], item['category'], item['subcategory']
+                , item['price'], item['review_cnt'], item['image_url']
+                , item['rating'], item['store']))
         except Exception as e:
             print(f"Error storing data: {e}")
 
+    print("[완료]: 데이터 저장 완료")
     connection.commit()
     cursor.close()
     connection.close()
