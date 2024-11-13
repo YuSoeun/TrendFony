@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from forex_python.converter import CurrencyRates
 import time
@@ -54,9 +55,6 @@ def get_product_data(driver):
         try:
             href = product.find_element(By.XPATH, "./div[1]/a").get_attribute("href")
             hrefs.append(href)
-            
-            print("href:", href)
-            break
         except Exception as e:
             print(f"Error retrieving product data: {e}")
 
@@ -64,14 +62,24 @@ def get_product_data(driver):
         try:
             # 상세 페이지에서 얻는 detail
             driver.get(href)
+            print("href:", href)
+
+            IDs = [
+                "corePriceDisplay_desktop_feature_div",
+                "detailBulletsWrapper_feature_div",
+            ]
+
             # 페이지 로딩 대기
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.ID, "detailBulletsWrapper_feature_div")),
-                EC.presence_of_element_located((By.ID, "corePriceDisplay_desktop_feature_div"))
-            )
+            for ID in IDs:
+                try:
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.ID, ID))
+                    )
+                except (NoSuchElementException, TimeoutException):
+                    continue
+
             name = driver.find_element(By.XPATH, "//*[@id='productTitle']").text
             image_url = driver.find_element(By.XPATH, "//*[@id='landingImage']").get_attribute("src")
-            print("image_url:", image_url)
 
             # rank와 category parsing
             text = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span").text
@@ -89,6 +97,8 @@ def get_product_data(driver):
 
             # 기타 세부 항목
             review_match = re.search(r'[\d,]+', driver.find_element(By.XPATH, "//*[@id='acrCustomerReviewText']").text)
+            # TODO: 한번씩 price 값 못 가져오는 것 해결
+
             price = float(clean_price(driver.find_element(By.XPATH, "//*[@id='corePriceDisplay_desktop_feature_div']/div[1]/span[2]/span[2]").text))
             review_cnt = int(review_match.group(0).replace(',', ''))
             rating = driver.find_element(By.XPATH, "//*[@id='acrPopover']/span[1]/a/span").text
