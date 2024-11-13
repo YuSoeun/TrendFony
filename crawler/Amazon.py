@@ -4,8 +4,10 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from forex_python.converter import CurrencyRates
 import time
 import pymysql
+import re
 from dotenv import load_dotenv
 import os
 
@@ -29,6 +31,19 @@ def connect_to_db():
 
     return connection
 
+# 가격 처리 함수
+def clean_price(price_text):
+    # '$', '\n' 제거 후 공백을 없앰
+    cleaned_text = price_text.replace('$', '').replace('\n', '').strip()
+    
+    # 두 부분을 분리하여 소수점으로 합침
+    if len(cleaned_text) > 2:
+        dollars = cleaned_text[:-2]  # 마지막 두 자리를 제외한 부분 (달러)
+        cents = cleaned_text[-2:]    # 마지막 두 자리 (센트)
+        return f"{dollars}.{cents}"
+    else:
+        return cleaned_text
+
 # 제품 데이터 수집 함수
 def get_product_data(driver):
     products = driver.find_elements(By.XPATH, "//*[@id='ProductGrid-C9vh1r9haz']/div/div/div/div/ul/li")
@@ -37,13 +52,9 @@ def get_product_data(driver):
 
     for product in products:
         try:
-            name = product.find_element(By.XPATH, "./div[2]/div[4]/div[1]/div[1]/a").text
-            image_url = product.find_element(By.XPATH, ".//./div[2]/div[3]/div[1]/div[2]/img").get_attribute("src")
             href = product.find_element(By.XPATH, "./div[1]/a").get_attribute("href")
-            
             hrefs.append(href)
             
-            print("product name:", name)
             print("href:", href)
             break
         except Exception as e:
@@ -55,23 +66,35 @@ def get_product_data(driver):
             driver.get(href)
             # 페이지 로딩 대기
             WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.ID, "detailBulletsWrapper_feature_div"))
+                EC.presence_of_element_located((By.ID, "detailBulletsWrapper_feature_div")),
+                EC.presence_of_element_located((By.ID, "corePriceDisplay_desktop_feature_div"))
             )
-            category = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span").text
-            subcategory = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span/ul/li/span").text
-            print("category:", category)
-            print("subcategory:", subcategory)
-            # # TODO: category rank parsing
-            rank = category
-            # # TODO: subcategory rank parsing
-            category_rank = subcategory
+            name = driver.find_element(By.XPATH, "//*[@id='productTitle']").text
+            image_url = driver.find_element(By.XPATH, "//*[@id='landingImage']").get_attribute("src")
+            print("image_url:", image_url)
 
-            price = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span/span").get_attribute('data-testid')
-            review_cnt = driver.find_element(By.XPATH, "//*[@id='acrCustomerReviewText']").text
+            # rank와 category parsing
+            text = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span").text
+            rank_match = re.search(r'#([\d,]+) in', text)
+            category_match = re.search(r'in (.*?) \(', text)
+
+            category = category_match.group(1) if category_match else None
+            rank = int(rank_match.group(1).replace(',', '')) if rank_match else None
+
+            text = driver.find_element(By.XPATH, "//*[@id='detailBulletsWrapper_feature_div']/ul[1]/li/span/ul/li/span").text
+            subrank_match = re.search(r'#(\d+) in', text)
+            subcategory_match = re.search(r'in (.+)', text)
+            subcategory = subcategory_match.group(1) if subcategory_match else None
+            category_rank = int(subrank_match.group(1).replace(',', '')) if rank_match else None
+
+            # 기타 세부 항목
+            review_match = re.search(r'[\d,]+', driver.find_element(By.XPATH, "//*[@id='acrCustomerReviewText']").text)
+            price = float(clean_price(driver.find_element(By.XPATH, "//*[@id='corePriceDisplay_desktop_feature_div']/div[1]/span[2]/span[2]").text))
+            review_cnt = int(review_match.group(0).replace(',', ''))
             rating = driver.find_element(By.XPATH, "//*[@id='acrPopover']/span[1]/a/span").text
-            # # TODO: get to know is_soldout
+            # TODO: get to know is_soldout
             store = "Amazon"
-            # # TODO: get keyword from reviews
+            # TODO: get keyword from reviews
 
             product_data.append({
                 'name': name,
@@ -80,6 +103,8 @@ def get_product_data(driver):
                 'price': price,
                 'review_cnt': review_cnt,
                 'image_url': image_url,
+                'rank': rank,
+                'category_rank': category_rank,
                 'rating': rating,
                 'store': store
             })
@@ -95,21 +120,28 @@ def store_data(data):
 
     for item in data:
         try:
-            # 'name': name,
-            #     'category': category,
-            #     'subcategory': subcategory,
-            #     'price': price,
-            #     'review_cnt': review_cnt,
-            #     'image_url': image_url,
-            #     'rating': rating,
-            #     'store': store
+            price = float(item['price']) if item['price'] else 0.0
+            review_cnt = int(item['review_cnt']) if item['review_cnt'] else 0
+            rating = float(item['rating']) if item['rating'] else 0.0
+            cate_rank = int(item['rank']) if item['rank'] else 0
+            subcate_rank = int(item['category_rank']) if item['category_rank'] else 0
+
             cursor.execute("""
-                INSERT INTO product (name, category, subcategory,
-                    price, review_cnt, image_url, rating, store)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (item['name'], item['category'], item['subcategory']
-                , item['price'], item['review_cnt'], item['image_url']
-                , item['rating'], item['store']))
+            INSERT INTO product (name, category, subcategory, price, review_cnt
+                , image_url, cate_rank, subcate_rank, rating, store)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            item['name'],
+            item['category'],
+            item['subcategory'],
+            price,
+            review_cnt,
+            item['image_url'],
+            cate_rank,
+            subcate_rank,
+            rating,
+            item['store']
+        ))
         except Exception as e:
             print(f"Error storing data: {e}")
 
