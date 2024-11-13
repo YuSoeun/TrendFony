@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,java,python,git,react,node,vim,visualstudiocode,intellij,eclipse
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,java,python,git,react,node,vim,visualstudiocode,intellij,eclipse
 
+# Personal file
+.env
+
 ### Eclipse ###
 .metadata
 bin/
