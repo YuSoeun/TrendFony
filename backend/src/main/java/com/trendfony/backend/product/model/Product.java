@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import com.trendfony.backend.common.BaseEntity;
+import com.trendfony.backend.detail.model.Detail;
+import com.trendfony.backend.keyword.model.Keyword;
 
 import java.util.List;
 
