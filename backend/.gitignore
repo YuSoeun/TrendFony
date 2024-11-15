@@ -2,8 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,java,python,git,react,node,vim,visualstudiocode,intellij,eclipse
 
 ## personal file
-src/main/resources/application.properties
-src/main/resources/application-test.properties
+src/main/resources/application.yml
+src/main/resources/application-test.yml
 
 ### Eclipse ###
 .metadata
