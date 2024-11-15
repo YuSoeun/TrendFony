@@ -1,7 +1,7 @@
 package com.trendfony.backend.keyword.controller;
 
-import com.trendfony.backend.keyword.view.KeywordView;
+import com.trendfony.backend.keyword.view.KeywordService;
 
 public class KeywordController {
-    private KeywordView keywordView;
+    private KeywordService keywordService;
 }

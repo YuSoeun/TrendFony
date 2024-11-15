@@ -1,4 +1,4 @@
-package com.trendfony.backend.keyword.model;
+package com.trendfony.backend.store.model;
 
 import javax.persistence.*;
 
@@ -6,15 +6,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 import com.trendfony.backend.common.BaseEntity;
-import com.trendfony.backend.product.Product;
-import com.trendfony.backend.store.Store;
 
 import java.util.List;
 
 @Entity
 @Getter
 @Setter
-public class Keyword extends BaseEntity {
+public class Store extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
