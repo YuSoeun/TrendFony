@@ -1,7 +1,7 @@
 package com.trendfony.backend.product.service;
 
 import com.trendfony.backend.product.model.Product;
-import com.trendfony.backend.product.model.ProductRepository;
+import com.trendfony.backend.product.model.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

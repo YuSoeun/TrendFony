@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import com.trendfony.backend.common.BaseEntity;
+import com.trendfony.backend.product.model.Product;
 
 import java.util.List;
 
