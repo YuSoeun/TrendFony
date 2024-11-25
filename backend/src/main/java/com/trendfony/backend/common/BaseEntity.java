@@ -1,4 +1,4 @@
-package com.trendfony.backend.commen;
+package com.trendfony.backend.common;
 
 import java.time.LocalDateTime;
 import javax.persistence.EntityListeners;
