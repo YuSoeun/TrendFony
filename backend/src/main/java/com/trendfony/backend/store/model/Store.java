@@ -7,6 +7,8 @@ import lombok.Setter;
 
 import com.trendfony.backend.common.BaseEntity;
 import com.trendfony.backend.product.model.Product;
+import com.trendfony.backend.detail.model.Detail;
+import com.trendfony.backend.keyword.model.Keyword;
 
 import java.util.List;
 
@@ -21,12 +23,9 @@ public class Store extends BaseEntity {
     private String word;
 
     private Long count;
+    @OneToMany(mappedBy = "store", cascade = CascadeType.ALL)
+    private List<Detail> details;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
-
-    @ManyToOne
-    @JoinColumn(name = "store_id")
-    private Store store;
+    @OneToMany(mappedBy = "store", cascade = CascadeType.ALL)
+    private List<Keyword> keywords;
 }

@@ -24,13 +24,9 @@ public class Product extends BaseEntity {
 
     private String url;
 
-    @ManyToOne
-    @JoinColumn(name = "store_id")
-    private Store store;
-
-    @OneToMany(mappedBy = "store", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Detail> details;
 
-    @OneToMany(mappedBy = "store", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Keyword> keywords;
 }
