@@ -4,7 +4,7 @@
 ## personal file
 src/main/resources/application.yml
 src/main/resources/application-test.yml
-*.db
+*.
 
 ### Eclipse ###
 .metadata
