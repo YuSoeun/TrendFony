@@ -19,6 +19,7 @@ public class Detail extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "`rank`")
     private Long rank;
 
     private Long categoryRank;
