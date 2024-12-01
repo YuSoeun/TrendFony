@@ -6,8 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import com.trendfony.backend.common.BaseEntity;
-import com.trendfony.backend.store.model.Store;
-import com.trendfony.backend.detail.model.Detail;
 import com.trendfony.backend.keyword.model.Keyword;
 
 import java.util.List;
@@ -24,8 +22,20 @@ public class Product extends BaseEntity {
 
     private String url;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<Detail> details;
+    @Column(name = "`rank`")
+    private Long rank;
+
+    private Long categoryRank;
+
+    private Long price;
+
+    private Long reviewCnt;
+
+    private Long rating;
+
+    private int isSoldout;
+
+    private String storeName;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Keyword> keywords;
