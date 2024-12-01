@@ -7,7 +7,6 @@ import lombok.Setter;
 
 import com.trendfony.backend.common.BaseEntity;
 import com.trendfony.backend.product.model.Product;
-import com.trendfony.backend.store.model.Store;
 
 import java.util.List;
 
@@ -26,8 +25,4 @@ public class Keyword extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
-
-    @ManyToOne
-    @JoinColumn(name = "store_id")
-    private Store store;
 }
