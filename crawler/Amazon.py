@@ -103,20 +103,20 @@ def get_product_data(driver):
             review_cnt = int(review_match.group(0).replace(',', ''))
             rating = driver.find_element(By.XPATH, "//*[@id='acrPopover']/span[1]/a/span").text
             # TODO: get to know is_soldout
-            store = "Amazon"
+            storeName = "Amazon"
             # TODO: get keyword from reviews
 
             product_data.append({
                 'name': name,
-                'category': category,
-                'subcategory': subcategory,
-                'price': price,
-                'review_cnt': review_cnt,
                 'image_url': image_url,
                 'rank': rank,
                 'category_rank': category_rank,
+                'price': price,
+                'category': category,
+                'subcategory': subcategory,
+                'review_cnt': review_cnt,
                 'rating': rating,
-                'store': store
+                'store_name': storeName
             })
         except Exception as e:
             print(f"Error retrieving product data: {e}")
@@ -138,7 +138,7 @@ def store_data(data):
 
             cursor.execute("""
             INSERT INTO product (name, category, subcategory, price, review_cnt
-                , image_url, cate_rank, subcate_rank, rating, store)
+                , image_url, cate_rank, subcate_rank, rating, store_name)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             item['name'],
@@ -150,7 +150,7 @@ def store_data(data):
             cate_rank,
             subcate_rank,
             rating,
-            item['store']
+            item['store_name']
         ))
         except Exception as e:
             print(f"Error storing data: {e}")
