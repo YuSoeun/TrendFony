@@ -13,5 +13,5 @@ public class UpdateProductRequest {
     private Long categoryRank;
     private Long price;
     private Long reviewCnt;
-    private Long rating;
+    private float rating;
 }

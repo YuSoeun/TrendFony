@@ -41,7 +41,7 @@ public class Product extends BaseEntity {
 
     private Long reviewCnt;
 
-    private Long rating;
+    private float rating;
 
     private int isSoldout;
 

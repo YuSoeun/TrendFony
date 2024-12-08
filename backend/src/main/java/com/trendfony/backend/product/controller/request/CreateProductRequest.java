@@ -15,7 +15,7 @@ public class CreateProductRequest {
     private Long categoryRank;
     private Long price;
     private Long reviewCnt;
-    private Long rating;
+    private float rating;
     private int isSoldout;
     private String storeName;
 }

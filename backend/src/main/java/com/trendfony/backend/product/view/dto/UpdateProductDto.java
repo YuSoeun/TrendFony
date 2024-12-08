@@ -17,7 +17,7 @@ public class UpdateProductDto {
     private Long categoryRank;
     private Long price;
     private Long reviewCnt;
-    private Long rating;
+    private float rating;
 
     public static UpdateProductDto from(UpdateProductRequest request) {
         return new UpdateProductDto(request.getName(), request.getRank(), request.getCategoryRank(),
